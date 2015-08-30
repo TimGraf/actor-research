@@ -5,12 +5,20 @@ import akka.actor.ActorLogging
 
 import scala.util.Random
 
-class RandomActor() extends Actor with ActorLogging {
+object RandomActor {
+  case class NextRandom()
+  case class ForceTimeout(seconds: Int)
+}
+
+class RandomActor() extends InstrumentedActor with ActorLogging {
 
   def receive = {
 
-    case "random" =>
+    case (next: RandomActor.NextRandom) =>
       val rand = new Random
       sender ! rand.nextInt
+
+    case (timeout: RandomActor.ForceTimeout) =>
+      Thread.sleep(timeout.seconds)
   }
 }

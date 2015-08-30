@@ -8,15 +8,17 @@ import akka.pattern.ask
 import akka.util.Timeout
 
 import scala.concurrent.duration._
+import scala.language.postfixOps
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
+import com.typesafe.scalalogging.StrictLogging
 
 import java.io.File
 
 import services._
 
-object Boot extends App {
+object Boot extends App with StrictLogging {
 
   val prop: String = System.getProperty("config.file")
 
@@ -26,9 +28,11 @@ object Boot extends App {
 
   implicit val system = ActorSystem("pjanof-actor-research", config)
 
+  system.registerOnTermination { logger.info("Actor System Terminating") }
+
   val service = system.actorOf(Props[RoutingServiceActor], "actor-research-service")
 
-  implicit val timeout = Timeout(5.seconds)
+  implicit val timeout = Timeout(config.getInt("service.actor.timeout-in-seconds") seconds)
 
   IO(Http) ? Http.Bind(service, interface = config.getString("service.host"), port = config.getInt("service.port"))
 }
